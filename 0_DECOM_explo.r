@@ -24,10 +24,12 @@ hist(s_dec$jour_sol[s_dec$site_type == "toundrique"])
 
 #### Interactive ggplot - lat vs v_decomp ####
 library(ggplot2)
+library(plotly)
 library(dplyr)
 library(plotly)
 library(viridis)
 library(hrbrthemes)
+library(sf)
 
 # Text preparation
 p <- s_dec %>%
@@ -77,3 +79,48 @@ dec_stab_plot <- ggplot(p, aes(x = v_decomp, y = fact_stab, size = jour_sol, col
 # turn ggplot interactive with plotly
 int_plt3 <- ggplotly(dec_stab_plot, tooltip = "text")
 int_plt3
+
+
+#### Interactive map with decomposition speed ####
+qc <- st_transform(st_read("/home/local/USHERBROOKE/juhc3201/BdQc/COLEO/Data/QUEBEC_CR_NIV_01.gpkg"), crs = st_crs(4326))
+
+map <- p %>%
+    ggplot() +
+    geom_sf(data = qc, fill = "grey", alpha = 0.3) +
+    geom_point(aes(
+        x = lon_centro, y = lat_centro, size = v_decomp, color = v_decomp, text = text,
+        alpha = v_decomp
+    )) +
+    #   scale_size_continuous(range = c(1, 9)) +
+    scale_color_viridis_c(option = "inferno", direction = -1, trans = "log") +
+    scale_alpha_continuous(trans = "log") +
+    theme_void() +
+    theme(legend.position = "none")
+
+int_map <- ggplotly(map, tooltip = "text")
+int_map
+
+
+#### Interactive map with stability factor ####
+map <- p %>%
+    ggplot() +
+    geom_sf(data = qc, fill = "grey", alpha = 0.3) +
+    geom_point(aes(
+        x = lon_centro, y = lat_centro, size = fact_stab, color = fact_stab, text = text,
+        alpha = fact_stab
+    )) +
+    #   scale_size_continuous(range = c(1, 9)) +
+    scale_color_viridis_c(option = "inferno", direction = -1, trans = "log") +
+    scale_alpha_continuous(trans = "log") +
+    theme_void() +
+    theme(legend.position = "none")
+
+int_map <- ggplotly(map, tooltip = "text")
+int_map
+
+
+summary(lm(p$v_decomp ~ p$fact_stab))
+summary(lm(p$fact_stab ~ p$lat_centro))
+summary(lm(p$v_decomp ~ p$lat_centro))
+summary(lm(p$v_decomp ~ p$site_type))
+summary(lm(p$fact_stab ~ p$site_type))
